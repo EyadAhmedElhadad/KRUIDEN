@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { getOrCreatePrimaryProductRecord } from "@/lib/get-or-create-product";
+import { FALLBACK_PRODUCT } from "@/lib/product";
 import { isPaymobConfigured, createPaymobPayment } from "@/lib/paymob";
-import { isAdminAuthenticated } from "@/lib/admin-auth";
+import { isAdminAuthenticated } from "@/lib/auth";
 import { EGYPT_GOVERNORATES } from "@/lib/governorates";
 
 const checkoutSchema = z.object({
@@ -48,7 +49,8 @@ export async function POST(req: NextRequest) {
     // v1 is single-product, so resolve every line item to the one
     // canonical DB record regardless of the client-sent productId. This
     // keeps checkout resilient even if the client's cached id is stale.
-    const product = await getOrCreatePrimaryProductRecord();
+    const rawProduct = await getOrCreatePrimaryProductRecord();
+    const product = (rawProduct as unknown as typeof FALLBACK_PRODUCT & { id: string }) || FALLBACK_PRODUCT;
     const quantity = data.items.reduce((sum, i) => sum + i.quantity, 0);
     const subtotal = product.price * quantity;
     const total = subtotal + SHIPPING_FEE;
@@ -109,7 +111,7 @@ export async function POST(req: NextRequest) {
 }
 
 export async function GET() {
-  if (!isAdminAuthenticated()) {
+  if (!(await isAdminAuthenticated())) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const orders = await prisma.order.findMany({

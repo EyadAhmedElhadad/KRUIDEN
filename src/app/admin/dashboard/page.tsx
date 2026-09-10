@@ -1,29 +1,49 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { isAdminAuthenticated } from "@/lib/admin-auth";
+import { isAdminAuthenticated } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import AdminShell from "@/components/admin/AdminShell";
 import { formatPrice } from "@/lib/utils";
 import { Icon, STATUS_META } from "@/components/admin/Icon";
 
 export default async function AdminDashboardPage() {
-  if (!isAdminAuthenticated()) redirect("/admin");
+  if (!(await isAdminAuthenticated())) redirect("/admin");
 
-  const [orderCount, pendingCount, revenue, orders] = await Promise.all([
-    prisma.order.count(),
-    prisma.order.count({ where: { status: "PENDING" } }),
-    prisma.order.aggregate({ _sum: { total: true } }),
-    prisma.order.findMany({
-      orderBy: { createdAt: "desc" },
-      take: 5,
-      include: { items: { include: { product: true } } },
-    }),
-  ]);
+  // Graceful fallback when DB is unreachable (local dev without Neon)
+  let orderCount = 0;
+  let pendingCount = 0;
+  let revenue: { _sum: { total: number | null } } = { _sum: { total: 0 } };
+  let orders: Awaited<ReturnType<typeof prisma.order.findMany>> = [];
+  try {
+    [orderCount, pendingCount, revenue, orders] = await Promise.all([
+      prisma.order.count(),
+      prisma.order.count({ where: { status: "PENDING" } }),
+      prisma.order.aggregate({ _sum: { total: true } }),
+      prisma.order.findMany({
+        orderBy: { createdAt: "desc" },
+        take: 5,
+        include: { items: { include: { product: true } } },
+      }),
+    ]);
+  } catch {
+    // DB unreachable — keep zeros, UI will show empty state + note
+  }
 
   const totalRevenue = revenue._sum.total ?? 0;
   const avgOrder = orderCount > 0 ? Math.round(totalRevenue / orderCount) : 0;
 
-  const daily = await revenueByDay();
+  let daily: Awaited<ReturnType<typeof revenueByDay>>;
+  try {
+    daily = await revenueByDay();
+  } catch {
+    const days: { label: string; value: number; max: number }[] = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      days.push({ label: d.toLocaleDateString("en-US", { weekday: "short" }), value: 0, max: 0 });
+    }
+    daily = days;
+  }
 
   return (
     <AdminShell>
@@ -123,7 +143,7 @@ async function revenueByDay() {
   const rows = await prisma.order.findMany({
     where: { createdAt: { gte: since } },
     select: { createdAt: true, total: true },
-  });
+  }).catch(() => [] as { createdAt: Date; total: number }[]);
 
   const days: { label: string; value: number; date: string }[] = [];
   for (let i = 0; i < 7; i++) {

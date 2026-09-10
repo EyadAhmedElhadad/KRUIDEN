@@ -8,9 +8,18 @@ import { FALLBACK_PRODUCT } from "./product";
  * separate seed step.
  */
 export async function getOrCreatePrimaryProductRecord() {
-  const existing = await prisma.product.findFirst({ orderBy: { createdAt: "asc" } });
-  if (existing) return existing;
-
-  const { id, ...data } = FALLBACK_PRODUCT;
-  return prisma.product.create({ data });
+  try {
+    const existing = await prisma.product.findFirst({ orderBy: { createdAt: "asc" } });
+    if (existing) return existing;
+    const { id, ...data } = FALLBACK_PRODUCT;
+    return await prisma.product.create({ data });
+  } catch {
+    // DB unreachable — return fallback shaped like a Product record
+    return {
+      ...FALLBACK_PRODUCT,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      orderItems: [],
+    } as unknown as Awaited<ReturnType<typeof prisma.product.findFirst>>;
+  }
 }

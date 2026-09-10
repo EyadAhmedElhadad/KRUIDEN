@@ -1,13 +1,15 @@
 import { redirect } from "next/navigation";
-import { isAdminAuthenticated } from "@/lib/admin-auth";
+import { isAdminAuthenticated } from "@/lib/auth";
 import { getOrCreatePrimaryProductRecord } from "@/lib/get-or-create-product";
+import { FALLBACK_PRODUCT } from "@/lib/product";
 import AdminShell from "@/components/admin/AdminShell";
 import ProductEditor from "@/components/admin/ProductEditor";
 
 export default async function AdminProductPage() {
-  if (!isAdminAuthenticated()) redirect("/admin");
+  if (!(await isAdminAuthenticated())) redirect("/admin");
 
-  const product = await getOrCreatePrimaryProductRecord();
+  const raw = await getOrCreatePrimaryProductRecord();
+  const product = (raw as unknown as typeof FALLBACK_PRODUCT & { id: string }) || FALLBACK_PRODUCT;
 
   return (
     <AdminShell>

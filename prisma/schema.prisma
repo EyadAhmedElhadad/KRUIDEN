@@ -12,6 +12,17 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
+// ── Auth ────────────────────────────────────────────────────────────────
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String?  @default("Botanist")
+  role         String   @default("ADMIN") // single role for now
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
 // Kept as a table (not hardcoded) so the storefront stays extensible
 // once more than one product is introduced.
 model Product {

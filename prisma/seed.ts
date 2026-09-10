@@ -1,8 +1,20 @@
 import { PrismaClient } from "@prisma/client";
+import bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
 
 async function main() {
+  // ── Admin user (JWT auth) ──────────────────────────────────────────
+  const adminEmail = (process.env.ADMIN_EMAIL || "admin@kruiden.local").trim().toLowerCase();
+  const adminPassword = process.env.ADMIN_PASSWORD || "Verdant2026!";
+  const passwordHash = await bcrypt.hash(adminPassword, 10);
+  await prisma.user.upsert({
+    where: { email: adminEmail },
+    update: { passwordHash },
+    create: { email: adminEmail, passwordHash, name: "Botanist", role: "ADMIN" },
+  });
+  console.log(`Seeded admin user ${adminEmail}`);
+
   await prisma.product.upsert({
     where: { slug: "restorative-hair-oil" },
     update: {},

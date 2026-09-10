@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { isAdminAuthenticated } from "@/lib/admin-auth";
+import { isAdminAuthenticated } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { formatPrice, orderRef } from "@/lib/utils";
 import PrintButton from "@/components/admin/PrintButton";
@@ -9,12 +9,14 @@ export default async function PrintOrderPage({
 }: {
   params: { id: string };
 }) {
-  if (!isAdminAuthenticated()) redirect("/admin");
+  if (!(await isAdminAuthenticated())) redirect("/admin");
 
-  const order = await prisma.order.findUnique({
-    where: { id: params.id },
-    include: { items: { include: { product: true } } },
-  });
+  const order = await prisma.order
+    .findUnique({
+      where: { id: params.id },
+      include: { items: { include: { product: true } } },
+    })
+    .catch(() => null);
 
   if (!order) {
     return <div className="p-10 text-center text-ink">Order not found.</div>;

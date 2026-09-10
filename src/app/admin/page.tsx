@@ -1,14 +1,17 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useState } from "react";
 import { Icon } from "@/components/admin/Icon";
 
-export default function AdminLoginPage() {
+function LoginForm() {
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const next = searchParams.get("next") || "/admin/dashboard";
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -17,15 +20,15 @@ export default function AdminLoginPage() {
     const res = await fetch("/api/admin/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ password }),
+      body: JSON.stringify({ email, password }),
     });
     const data = await res.json();
     setLoading(false);
     if (!res.ok) {
-      setError(data.error ?? "Incorrect password");
+      setError(data.error ?? "Invalid email or password");
       return;
     }
-    router.push("/admin/dashboard");
+    router.push(next);
     router.refresh();
   }
 
@@ -46,6 +49,26 @@ export default function AdminLoginPage() {
           <form onSubmit={handleSubmit} className="mt-8 space-y-5">
             <label className="block">
               <span className="mb-2 block text-[12px] font-medium uppercase tracking-wide text-[#b9c2ab]">
+                Email
+              </span>
+              <div className="relative">
+                <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#a9d389]">
+                  <Icon name="mail" size={18} />
+                </span>
+                <input
+                  type="email"
+                  required
+                  autoFocus
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="labs-input pl-10"
+                  placeholder="admin@kruiden.local"
+                />
+              </div>
+            </label>
+
+            <label className="block">
+              <span className="mb-2 block text-[12px] font-medium uppercase tracking-wide text-[#b9c2ab]">
                 Password
               </span>
               <div className="relative">
@@ -55,7 +78,6 @@ export default function AdminLoginPage() {
                 <input
                   type="password"
                   required
-                  autoFocus
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="labs-input pl-10"
@@ -80,5 +102,13 @@ export default function AdminLoginPage() {
         </p>
       </div>
     </div>
+  );
+}
+
+export default function AdminLoginPage() {
+  return (
+    <Suspense fallback={<div className="labs-root flex min-h-screen items-center justify-center px-6"><div className="labs-card p-8">Loading…</div></div>}>
+      <LoginForm />
+    </Suspense>
   );
 }

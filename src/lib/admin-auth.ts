@@ -1,31 +1,11 @@
-import { cookies } from "next/headers";
-import crypto from "crypto";
+// Deprecated wrapper — new auth lives in @/lib/auth (JWT + bcrypt, email+password)
+// Kept for backwards-compat imports; prefer `import { isAdminAuthenticated } from '@/lib/auth'`
+export { isAdminAuthenticated, getAdminSession, ADMIN_COOKIE_NAME } from "./auth";
+export { verifyPassword as verifyAdminPassword } from "./auth";
 
-const COOKIE_NAME = "kruiden_admin_session";
-
-function expectedToken() {
-  const password = process.env.ADMIN_PASSWORD;
-  if (!password) return null;
-  return crypto.createHash("sha256").update(password).digest("hex");
-}
-
-export function verifyAdminPassword(password: string) {
-  const expected = process.env.ADMIN_PASSWORD;
-  return Boolean(expected) && password === expected;
-}
-
+// Legacy helper — now unused (kept to avoid breaking old imports during migration)
 export function adminSessionCookie() {
-  const token = expectedToken();
-  return { name: COOKIE_NAME, value: token ?? "" };
+  // New flow uses JWT from @/lib/auth `adminSessionCookie(token)`
+  // This stub is for legacy callers that passed no token — they should migrate
+  return { name: "kruiden_admin_token", value: "" };
 }
-
-/** Server-side check for use in API routes / server components. */
-export function isAdminAuthenticated() {
-  const expected = expectedToken();
-  if (!expected) return false;
-  const cookieStore = cookies();
-  const session = cookieStore.get(COOKIE_NAME)?.value;
-  return session === expected;
-}
-
-export const ADMIN_COOKIE_NAME = COOKIE_NAME;
