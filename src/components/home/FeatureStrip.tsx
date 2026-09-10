@@ -1,11 +1,7 @@
-const FEATURES = [
-  { label: "100% Natural Ingredients", icon: "leaf" },
-  { label: "Cold-Pressed", icon: "drop" },
-  { label: "Cruelty-Free", icon: "heart" },
-  { label: "Fast Delivery", icon: "truck" },
-] as const;
+import { getFeatures } from "@/lib/site-content";
 
-export default function FeatureStrip() {
+export default async function FeatureStrip() {
+  const FEATURES = await getFeatures();
   return (
     <section className="border-y border-apos-outlineVariant bg-apos-surface">
       <div className="container-editorial grid grid-cols-2 gap-y-8 py-10 md:grid-cols-4 md:gap-y-0 md:py-12">

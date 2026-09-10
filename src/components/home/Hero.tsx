@@ -2,38 +2,36 @@ import Image from "next/image";
 import Link from "next/link";
 import TrustIcon from "./TrustIcon";
 import type { ProductDTO } from "@/lib/types";
+import { getHeroSection } from "@/lib/site-content";
 
-export default function Hero({ product }: { product: ProductDTO }) {
+export default async function Hero({ product }: { product: ProductDTO }) {
+  const hero = await getHeroSection();
+  const heroImage = hero.imageUrl || product.images[0];
   return (
     <section className="relative overflow-hidden bg-apos-surface">
       <div className="container-editorial grid items-center gap-12 py-16 md:grid-cols-2 md:gap-16 md:py-24">
         <div className="order-2 md:order-1">
-          <p className="apo-eyebrow">Botanical Hair Ritual</p>
+          <p className="apo-eyebrow">{hero.eyebrow}</p>
           <h1 className="mt-5 font-noto text-4xl font-semibold leading-[1.08] tracking-tight text-apos-onSurface md:text-[56px]">
-            Naturally better
+            {hero.headline1}
             <br />
-            hair days.
+            {hero.headline2}
           </h1>
           <p className="mt-6 max-w-md text-[15px] leading-relaxed text-apos-onSurfaceVariant">
-            A cold-pressed hair oil made from a short, transparent list of
-            botanicals — crafted to nourish the scalp and strengthen every strand.
+            {hero.description}
           </p>
 
           <div className="mt-9 flex flex-col gap-3 sm:flex-row">
-            <Link href="/product" className="apo-btn">
-              Shop the Oil
+            <Link href={hero.primaryCtaHref} className="apo-btn">
+              {hero.primaryCtaLabel}
             </Link>
-            <Link href="#ritual" className="apo-btn-ghost">
-              Discover the Ritual
+            <Link href={hero.secondaryCtaHref} className="apo-btn-ghost">
+              {hero.secondaryCtaLabel}
             </Link>
           </div>
 
           <div className="mt-10 flex items-center gap-5">
-            {[
-              { icon: "leaf", label: "100% Botanical" },
-              { icon: "shield", label: "No Fillers" },
-              { icon: "spark", label: "Cruelty-Free" },
-            ].map((t) => (
+            {hero.trustBadges.map((t) => (
               <div key={t.label} className="flex items-center gap-2">
                 <TrustIcon name={t.icon} className="text-apos-primary" />
                 <span className="text-[12px] font-medium text-apos-onSurfaceVariant">
@@ -46,7 +44,7 @@ export default function Hero({ product }: { product: ProductDTO }) {
 
         <div className="relative order-1 aspect-[4/5] w-full overflow-hidden rounded-xl md:order-2 apo-shadow">
           <Image
-            src={product.images[0]}
+            src={heroImage}
             alt={product.name}
             fill
             priority

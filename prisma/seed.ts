@@ -52,6 +52,27 @@ async function main() {
     },
   });
   console.log("Seeded product.");
+
+  // ── Site content defaults ─────────────────────────────────────────
+  await prisma.siteSettings.upsert({ where: { id: "site" }, update: {}, create: { id: "site", siteName: "Kruiden", description: "A single, cold-pressed botanical hair oil — formulated without fillers, tested for one purpose: healthier hair, naturally." } });
+  await prisma.footerSettings.upsert({ where: { id: "footer" }, update: {}, create: { id: "footer" } });
+  await prisma.cartSettings.upsert({ where: { id: "cart" }, update: {}, create: { id: "cart" } });
+  await prisma.heroSection.upsert({ where: { id: "hero" }, update: {}, create: { id: "hero" } });
+  await prisma.ritualSection.upsert({ where: { id: "ritual" }, update: {}, create: { id: "ritual" } });
+  // Features
+  const featureCount = await prisma.feature.count();
+  if (featureCount === 0) {
+    await prisma.feature.createMany({
+      data: [
+        { label: "100% Natural Ingredients", icon: "leaf", order: 0, active: true },
+        { label: "Cold-Pressed", icon: "drop", order: 1, active: true },
+        { label: "Cruelty-Free", icon: "heart", order: 2, active: true },
+        { label: "Fast Delivery", icon: "truck", order: 3, active: true },
+      ],
+    });
+    console.log("Seeded features");
+  }
+  console.log("Seeded site content");
 }
 
 main()

@@ -99,3 +99,70 @@ model OrderItem {
   quantity  Int
   unitPrice Int // price at time of purchase
 }
+
+// ── Site Content (editable via /admin) ─────────────────────────────────
+model SiteSettings {
+  id          String @id @default("site")
+  siteName    String @default("Kruiden")
+  description String @db.Text @default("A single, cold-pressed botanical hair oil — formulated without fillers, tested for one purpose: healthier hair, naturally.")
+  updatedAt   DateTime @updatedAt
+}
+
+model FooterSettings {
+  id           String @id @default("footer")
+  email        String @default("hello@kruiden.com")
+  phone        String @default("+20 100 000 0000")
+  address      String @default("Cairo, Egypt")
+  instagramUrl String @default("#")
+  tiktokUrl    String @default("#")
+  facebookUrl  String @default("#")
+  copyright    String @default("© Kruiden. All rights reserved.")
+  shippingNote String @default("Secure Checkout · Cash on Delivery · Nationwide Shipping")
+  updatedAt    DateTime @updatedAt
+}
+
+model CartSettings {
+  id                    String  @id @default("cart")
+  codEnabled            Boolean @default(true)
+  shippingFee           Int     @default(0)
+  freeShippingThreshold Int? // e.g. 50000 = 500 EGP, null = no threshold
+  currency              String  @default("EGP")
+  updatedAt             DateTime @updatedAt
+}
+
+model HeroSection {
+  id                 String   @id @default("hero")
+  eyebrow            String   @default("Botanical Hair Ritual")
+  headline1          String   @default("Naturally better")
+  headline2          String   @default("hair days.")
+  description        String   @db.Text @default("A cold-pressed hair oil made from a short, transparent list of botanicals — crafted to nourish the scalp and strengthen every strand.")
+  primaryCtaLabel    String   @default("Shop the Oil")
+  primaryCtaHref     String   @default("/product")
+  secondaryCtaLabel  String   @default("Discover the Ritual")
+  secondaryCtaHref   String   @default("#ritual")
+  imageUrl           String? // overrides product.images[0] if set
+  trustBadges        Json? // [{icon,label}]
+  updatedAt          DateTime @updatedAt
+}
+
+model Feature {
+  id        String   @id @default(cuid())
+  label     String
+  icon      String   @default("leaf") // leaf, drop, heart, truck
+  order     Int      @default(0)
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model RitualSection {
+  id          String   @id @default("ritual")
+  eyebrow     String   @default("The Ritual")
+  headline    String   @db.Text @default("Simple ingredients.\nBetter hair days.")
+  description String   @db.Text @default("We started with one question: what would this oil look like with nothing to hide? The answer is a short list of cold-pressed botanicals, blended in small batches and bottled without dilution — so every drop does the work.")
+  bullets     String[] @default(["No synthetic fillers, ever", "Cold-pressed to preserve nutrients", "Formulated for daily scalp care"])
+  imageUrl    String?
+  ctaLabel    String   @default("Shop the Oil")
+  ctaHref     String   @default("/product")
+  updatedAt   DateTime @updatedAt
+}

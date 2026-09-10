@@ -3,12 +3,12 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useCart } from "@/lib/cart-context";
 import { formatPrice } from "@/lib/utils";
 import { EGYPT_GOVERNORATES } from "@/lib/governorates";
 
-export default function CheckoutForm({ paymobEnabled }: { paymobEnabled: boolean }) {
+export default function CheckoutForm({ paymobEnabled, codEnabled = true }: { paymobEnabled: boolean; codEnabled?: boolean }) {
   const { lines, subtotal, clear } = useCart();
   const router = useRouter();
 
@@ -22,6 +22,15 @@ export default function CheckoutForm({ paymobEnabled }: { paymobEnabled: boolean
   });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!codEnabled && paymobEnabled && form.paymentMethod === "CASH_ON_DELIVERY") {
+      setForm((f) => ({ ...f, paymentMethod: "PAYMOB" }));
+    }
+    if (!paymobEnabled && codEnabled && form.paymentMethod === "PAYMOB") {
+      setForm((f) => ({ ...f, paymentMethod: "CASH_ON_DELIVERY" }));
+    }
+  }, [codEnabled, paymobEnabled, form.paymentMethod]);
 
   function update<K extends keyof typeof form>(key: K, value: (typeof form)[K]) {
     setForm((f) => ({ ...f, [key]: value }));
@@ -143,13 +152,15 @@ export default function CheckoutForm({ paymobEnabled }: { paymobEnabled: boolean
         <fieldset>
           <legend className="mb-2 text-[13px] font-medium text-ink/70">Payment Method</legend>
           <div className="space-y-2">
-            <PaymentOption
-              id="cod"
-              label="Cash on Delivery"
-              description="Pay in cash when your order arrives."
-              checked={form.paymentMethod === "CASH_ON_DELIVERY"}
-              onSelect={() => update("paymentMethod", "CASH_ON_DELIVERY")}
-            />
+            {codEnabled && (
+              <PaymentOption
+                id="cod"
+                label="Cash on Delivery"
+                description="Pay in cash when your order arrives."
+                checked={form.paymentMethod === "CASH_ON_DELIVERY"}
+                onSelect={() => update("paymentMethod", "CASH_ON_DELIVERY")}
+              />
+            )}
             {paymobEnabled && (
               <PaymentOption
                 id="paymob"
@@ -158,6 +169,9 @@ export default function CheckoutForm({ paymobEnabled }: { paymobEnabled: boolean
                 checked={form.paymentMethod === "PAYMOB"}
                 onSelect={() => update("paymentMethod", "PAYMOB")}
               />
+            )}
+            {!codEnabled && !paymobEnabled && (
+              <p className="text-sm text-red-700">No payment methods are currently available. Please contact support.</p>
             )}
           </div>
         </fieldset>

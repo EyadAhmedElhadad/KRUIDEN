@@ -3,6 +3,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { getOrCreatePrimaryProductRecord } from "@/lib/get-or-create-product";
 import { FALLBACK_PRODUCT, getEffectivePrice } from "@/lib/product";
+import { getCartSettings } from "@/lib/site-content";
 import { isPaymobConfigured, createPaymobPayment } from "@/lib/paymob";
 import { isAdminAuthenticated } from "@/lib/auth";
 import { EGYPT_GOVERNORATES } from "@/lib/governorates";
@@ -19,7 +20,15 @@ const checkoutSchema = z.object({
     .min(1, "Your cart is empty"),
 });
 
-const SHIPPING_FEE = 0; // flat/free for v1; adjust per governorate if needed
+async function getShippingFee(subtotal: number): Promise<number> {
+  try {
+    const cart = await getCartSettings();
+    if (cart.freeShippingThreshold && subtotal >= cart.freeShippingThreshold) return 0;
+    return cart.shippingFee;
+  } catch {
+    return 0;
+  }
+}
 
 export async function POST(req: NextRequest) {
   let body: unknown;
@@ -38,6 +47,10 @@ export async function POST(req: NextRequest) {
   }
   const data = parsed.data;
 
+  const cartSettings = await getCartSettings().catch(() => ({ codEnabled: true } as { codEnabled: boolean }));
+  if (data.paymentMethod === "CASH_ON_DELIVERY" && !cartSettings.codEnabled) {
+    return NextResponse.json({ error: "Cash on Delivery is currently disabled." }, { status: 400 });
+  }
   if (data.paymentMethod === "PAYMOB" && !isPaymobConfigured()) {
     return NextResponse.json(
       { error: "Online payment isn't available right now. Please choose Cash on Delivery." },
@@ -54,7 +67,8 @@ export async function POST(req: NextRequest) {
     const quantity = data.items.reduce((sum, i) => sum + i.quantity, 0);
     const unitPrice = getEffectivePrice(product as unknown as import("@/lib/types").ProductDTO);
     const subtotal = unitPrice * quantity;
-    const total = subtotal + SHIPPING_FEE;
+    const shippingFee = await getShippingFee(subtotal);
+    const total = subtotal + shippingFee;
 
     const order = await prisma.order.create({
       data: {
@@ -65,7 +79,7 @@ export async function POST(req: NextRequest) {
         notes: data.notes,
         paymentMethod: data.paymentMethod,
         subtotal,
-        shippingFee: SHIPPING_FEE,
+        shippingFee,
         total,
         items: {
           create: [{ productId: product.id, quantity, unitPrice }],
