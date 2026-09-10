@@ -5,10 +5,14 @@ import Image from "next/image";
 import { useCart } from "@/lib/cart-context";
 import TrustIcon from "./TrustIcon";
 import type { ProductDTO } from "@/lib/types";
+import { formatPrice } from "@/lib/utils";
+import { getEffectivePrice, isDiscountActive } from "@/lib/product";
 
 export default function ProductPurchase({ product }: { product: ProductDTO }) {
   const { addItem } = useCart();
   const router = useRouter();
+  const effectivePrice = getEffectivePrice(product);
+  const discount = isDiscountActive(product);
 
   const handleAdd = () =>
     addItem({
@@ -16,7 +20,7 @@ export default function ProductPurchase({ product }: { product: ProductDTO }) {
       slug: product.slug,
       name: product.name,
       image: product.images[0],
-      price: product.price,
+      price: effectivePrice,
       currency: product.currency,
     });
 
@@ -58,10 +62,30 @@ export default function ProductPurchase({ product }: { product: ProductDTO }) {
             </span>
           </div>
 
-          <div className="mt-6 flex items-baseline gap-3">
-            <span className="text-3xl font-semibold text-apos-onSurface">
-              {product.price} {product.currency}
-            </span>
+          <div className="mt-6 flex flex-wrap items-baseline gap-3">
+            {discount ? (
+              <>
+                <span className="text-3xl font-semibold text-apos-onSurface">
+                  {formatPrice(effectivePrice, product.currency)}
+                </span>
+                <span className="text-lg text-apos-onSurfaceVariant line-through">
+                  {formatPrice(product.price, product.currency)}
+                </span>
+                {product.discountLabel ? (
+                  <span className="rounded-none bg-[#a9d389] px-2.5 py-1 text-xs font-semibold uppercase tracking-wide text-[#12140f]">
+                    {product.discountLabel}
+                  </span>
+                ) : (
+                  <span className="rounded-none bg-[#a9d389] px-2.5 py-1 text-xs font-semibold uppercase tracking-wide text-[#12140f]">
+                    {Math.round((1 - effectivePrice / product.price) * 100)}% OFF
+                  </span>
+                )}
+              </>
+            ) : (
+              <span className="text-3xl font-semibold text-apos-onSurface">
+                {formatPrice(product.price, product.currency)}
+              </span>
+            )}
           </div>
 
           {product.tagline ? (

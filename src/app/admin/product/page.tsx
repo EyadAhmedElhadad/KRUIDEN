@@ -31,6 +31,9 @@ export default async function AdminProductPage() {
             usage: product.usage,
             images: product.images,
             inStock: product.inStock,
+            discountPrice: (product as unknown as { discountPrice: number | null }).discountPrice ?? null,
+            discountActive: (product as unknown as { discountActive: boolean }).discountActive ?? false,
+            discountLabel: (product as unknown as { discountLabel: string | null }).discountLabel ?? null,
           }}
         />
       </div>

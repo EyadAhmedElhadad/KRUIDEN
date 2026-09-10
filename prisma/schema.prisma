@@ -26,22 +26,26 @@ model User {
 // Kept as a table (not hardcoded) so the storefront stays extensible
 // once more than one product is introduced.
 model Product {
-  id          String   @id @default(cuid())
-  slug        String   @unique
-  name        String
-  tagline     String? // short eyebrow / subtitle
-  description String   @db.Text
-  price       Int // stored in the smallest currency unit (piastres/cents)
-  currency    String   @default("EGP")
-  ingredients String[] // list of ingredient names
-  benefits    String[] // list of benefit statements
-  usage       String?  @db.Text
-  images      String[] // Cloudinary secure_urls, first = primary
-  rating      Float    @default(5)
-  reviewCount Int      @default(0)
-  inStock     Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id             String   @id @default(cuid())
+  slug           String   @unique
+  name           String
+  tagline        String? // short eyebrow / subtitle
+  description    String   @db.Text
+  price          Int // stored in the smallest currency unit (piastres/cents)
+  currency       String   @default("EGP")
+  ingredients    String[] // list of ingredient names
+  benefits       String[] // list of benefit statements
+  usage          String?  @db.Text
+  images         String[] // Cloudinary secure_urls, first = primary
+  rating         Float    @default(5)
+  reviewCount    Int      @default(0)
+  inStock        Boolean  @default(true)
+  // Discount support
+  discountPrice  Int? // discounted price in piastres when active
+  discountActive Boolean  @default(false)
+  discountLabel  String? // e.g. "20% OFF" or "Sale"
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   orderItems OrderItem[]
 }

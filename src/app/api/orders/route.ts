@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { getOrCreatePrimaryProductRecord } from "@/lib/get-or-create-product";
-import { FALLBACK_PRODUCT } from "@/lib/product";
+import { FALLBACK_PRODUCT, getEffectivePrice } from "@/lib/product";
 import { isPaymobConfigured, createPaymobPayment } from "@/lib/paymob";
 import { isAdminAuthenticated } from "@/lib/auth";
 import { EGYPT_GOVERNORATES } from "@/lib/governorates";
@@ -52,7 +52,8 @@ export async function POST(req: NextRequest) {
     const rawProduct = await getOrCreatePrimaryProductRecord();
     const product = (rawProduct as unknown as typeof FALLBACK_PRODUCT & { id: string }) || FALLBACK_PRODUCT;
     const quantity = data.items.reduce((sum, i) => sum + i.quantity, 0);
-    const subtotal = product.price * quantity;
+    const unitPrice = getEffectivePrice(product as unknown as import("@/lib/types").ProductDTO);
+    const subtotal = unitPrice * quantity;
     const total = subtotal + SHIPPING_FEE;
 
     const order = await prisma.order.create({
@@ -67,7 +68,7 @@ export async function POST(req: NextRequest) {
         shippingFee: SHIPPING_FEE,
         total,
         items: {
-          create: [{ productId: product.id, quantity, unitPrice: product.price }],
+          create: [{ productId: product.id, quantity, unitPrice }],
         },
       },
     });

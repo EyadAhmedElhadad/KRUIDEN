@@ -13,6 +13,9 @@ export type ProductDTO = {
   rating: number;
   reviewCount: number;
   inStock: boolean;
+  discountPrice: number | null;
+  discountActive: boolean;
+  discountLabel: string | null;
 };
 
 export type CartLine = {

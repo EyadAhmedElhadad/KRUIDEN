@@ -15,6 +15,9 @@ type ProductForm = {
   usage: string | null;
   images: string[];
   inStock: boolean;
+  discountPrice: number | null;
+  discountActive: boolean;
+  discountLabel: string | null;
 };
 
 export default function ProductEditor({ product }: { product: ProductForm }) {
@@ -28,6 +31,9 @@ export default function ProductEditor({ product }: { product: ProductForm }) {
     usage: product.usage ?? "",
     images: product.images,
     inStock: product.inStock,
+    discountActive: product.discountActive ?? false,
+    discountPriceMajor: product.discountPrice ? (product.discountPrice / 100).toString() : "",
+    discountLabel: product.discountLabel ?? "",
   });
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -69,6 +75,16 @@ export default function ProductEditor({ product }: { product: ProductForm }) {
     setSaving(true);
     setMessage(null);
     try {
+      const discountPrice = form.discountActive && form.discountPriceMajor
+        ? Math.round(parseFloat(form.discountPriceMajor) * 100)
+        : null;
+      // Basic validation: discount must be less than regular price when active
+      if (form.discountActive && discountPrice !== null) {
+        const regular = Math.round(parseFloat(form.priceMajor || "0") * 100);
+        if (discountPrice >= regular) {
+          throw new Error("Discount price must be less than the regular price");
+        }
+      }
       const res = await fetch(`/api/products/${product.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -82,6 +98,9 @@ export default function ProductEditor({ product }: { product: ProductForm }) {
           usage: form.usage,
           images: form.images,
           inStock: form.inStock,
+          discountActive: form.discountActive,
+          discountPrice,
+          discountLabel: form.discountLabel.trim() || null,
         }),
       });
       const data = await res.json();
@@ -119,6 +138,60 @@ export default function ProductEditor({ product }: { product: ProductForm }) {
           className="labs-input"
         />
       </Field>
+
+      {/* Discount */}
+      <div className="rounded-none border border-[rgba(169,211,137,0.12)] bg-[#161a12] p-4">
+        <label className="flex items-center gap-3">
+          <input
+            type="checkbox"
+            checked={form.discountActive}
+            onChange={(e) => update("discountActive", e.target.checked)}
+            className="h-4 w-4 accent-[#a9d389]"
+          />
+          <span className="text-sm font-medium text-[#f4f7ef]">Enable discount</span>
+          {form.discountActive && form.discountPriceMajor && form.priceMajor && (
+            <span className="ml-auto text-xs text-[#a9d389]">
+              {(() => {
+                const reg = parseFloat(form.priceMajor) || 0;
+                const disc = parseFloat(form.discountPriceMajor) || 0;
+                if (reg > 0 && disc > 0 && disc < reg) {
+                  const pct = Math.round((1 - disc / reg) * 100);
+                  return `-${pct}%`;
+                }
+                return "";
+              })()}
+            </span>
+          )}
+        </label>
+
+        {form.discountActive && (
+          <div className="mt-4 grid gap-4 sm:grid-cols-2">
+            <Field label="Discount price (EGP)">
+              <input
+                type="number"
+                step="0.01"
+                value={form.discountPriceMajor}
+                onChange={(e) => update("discountPriceMajor", e.target.value)}
+                className="labs-input"
+                placeholder="e.g. 690.00"
+              />
+            </Field>
+            <Field label="Discount label (optional)">
+              <input
+                value={form.discountLabel}
+                onChange={(e) => update("discountLabel", e.target.value)}
+                className="labs-input"
+                placeholder='e.g. "20% OFF" or "Sale"'
+                maxLength={24}
+              />
+            </Field>
+          </div>
+        )}
+        {!form.discountActive && (
+          <p className="mt-2 text-xs text-[#b9c2ab]/60">Toggle to set a sale price and optional badge.</p>
+        )}
+      </div>
+
       <Field label="Ingredients (comma separated)">
         <textarea
           rows={2}

@@ -13,6 +13,9 @@ const updateSchema = z.object({
   usage: z.string().optional(),
   images: z.array(z.string()).optional(),
   inStock: z.boolean().optional(),
+  discountPrice: z.number().int().positive().nullable().optional(),
+  discountActive: z.boolean().optional(),
+  discountLabel: z.string().max(24).nullable().optional(),
 });
 
 export async function PATCH(

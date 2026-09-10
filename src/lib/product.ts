@@ -35,7 +35,21 @@ export const FALLBACK_PRODUCT: ProductDTO = {
   rating: 4.9,
   reviewCount: 214,
   inStock: true,
+  discountPrice: null,
+  discountActive: false,
+  discountLabel: null,
 };
+
+export function getEffectivePrice(product: ProductDTO): number {
+  if (product.discountActive && typeof product.discountPrice === "number" && product.discountPrice > 0) {
+    return product.discountPrice;
+  }
+  return product.price;
+}
+
+export function isDiscountActive(product: ProductDTO): boolean {
+  return Boolean(product.discountActive && product.discountPrice && product.discountPrice > 0 && product.discountPrice < product.price);
+}
 
 export async function getPrimaryProduct(): Promise<ProductDTO> {
   try {
