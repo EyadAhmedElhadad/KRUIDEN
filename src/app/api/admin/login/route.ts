@@ -63,7 +63,23 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid email or password" }, { status: 401 });
   }
 
-  const ok = await verifyPassword(password, user.passwordHash);
+  let ok = await verifyPassword(password, user.passwordHash);
+  // Graceful password rotation: if bcrypt fails but env ADMIN_PASSWORD matches and email matches env, auto-update hash
+  // This handles .env password change (Verdant2026! -> kruiden2026) without manual DB reset
+  if (!ok && process.env.ADMIN_EMAIL && process.env.ADMIN_PASSWORD) {
+    const envEmail = process.env.ADMIN_EMAIL.trim().toLowerCase();
+    const envPassword = process.env.ADMIN_PASSWORD;
+    if (normalizedEmail === envEmail && password === envPassword) {
+      try {
+        const newHash = await hashPassword(envPassword);
+        await prisma.user.update({ where: { id: user.id }, data: { passwordHash: newHash } });
+        ok = true;
+      } catch {
+        // If DB update fails (unreachable), still allow login via env fallback
+        ok = true;
+      }
+    }
+  }
   if (!ok) {
     return NextResponse.json({ error: "Invalid email or password" }, { status: 401 });
   }
