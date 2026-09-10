@@ -1,0 +1,32 @@
+// All 27 Egyptian governorates, used in the checkout address form.
+export const EGYPT_GOVERNORATES = [
+  "Cairo",
+  "Alexandria",
+  "Giza",
+  "Qalyubia",
+  "Port Said",
+  "Suez",
+  "Dakahlia",
+  "Sharqia",
+  "Gharbia",
+  "Monufia",
+  "Beheira",
+  "Kafr El Sheikh",
+  "Damietta",
+  "Ismailia",
+  "Faiyum",
+  "Beni Suef",
+  "Minya",
+  "Asyut",
+  "Sohag",
+  "Qena",
+  "Luxor",
+  "Aswan",
+  "Red Sea",
+  "New Valley",
+  "Matrouh",
+  "North Sinai",
+  "South Sinai",
+] as const;
+
+export type Governorate = (typeof EGYPT_GOVERNORATES)[number];

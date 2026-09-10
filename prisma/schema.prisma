@@ -1,0 +1,86 @@
+// Olive Essence — Prisma schema
+// Single isolated Neon Postgres database for this project.
+
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "rhel-openssl-3.0.x", "debian-openssl-3.0.x"]
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// Kept as a table (not hardcoded) so the storefront stays extensible
+// once more than one product is introduced.
+model Product {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  name        String
+  tagline     String? // short eyebrow / subtitle
+  description String   @db.Text
+  price       Int // stored in the smallest currency unit (piastres/cents)
+  currency    String   @default("EGP")
+  ingredients String[] // list of ingredient names
+  benefits    String[] // list of benefit statements
+  usage       String?  @db.Text
+  images      String[] // Cloudinary secure_urls, first = primary
+  rating      Float    @default(5)
+  reviewCount Int      @default(0)
+  inStock     Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  orderItems OrderItem[]
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+enum PaymentMethod {
+  CASH_ON_DELIVERY
+  PAYMOB
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+}
+
+model Order {
+  id             String        @id @default(cuid())
+  customerName   String
+  phone          String
+  governorate    String
+  address        String        @db.Text
+  notes          String?       @db.Text
+  internalNotes  String?       @db.Text
+  paymentMethod  PaymentMethod @default(CASH_ON_DELIVERY)
+  paymentStatus  PaymentStatus @default(PENDING)
+  paymobOrderId  String?
+  status         OrderStatus   @default(PENDING)
+  subtotal       Int
+  shippingFee    Int           @default(0)
+  total          Int
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  items OrderItem[]
+}
+
+model OrderItem {
+  id        String @id @default(cuid())
+  orderId   String
+  order     Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+  quantity  Int
+  unitPrice Int // price at time of purchase
+}
