@@ -26,10 +26,13 @@ export async function PATCH(req: NextRequest) {
   }
 
   try {
-    const user = await prisma.user.findUnique({ where: { id: session.sub } });
+    const user = await prisma.user.findUnique({ where: { id: session.sub } }).catch(() => null);
     // Fallback: if session is env-admin synthetic id, find by email
-    const target = user ?? (await prisma.user.findUnique({ where: { email: session.email } }));
-    if (!target) return NextResponse.json({ error: "Admin not found" }, { status: 404 });
+    const target = user ?? (await prisma.user.findUnique({ where: { email: session.email } }).catch(() => null));
+    if (!target) {
+      // DB unreachable and using env fallback session — can't persist password without DB
+      return NextResponse.json({ error: "Database not configured. Set DATABASE_URL and run prisma db push, or change ADMIN_PASSWORD in Vercel env." }, { status: 503 });
+    }
 
     const ok = await verifyPassword(currentPassword, target.passwordHash);
     if (!ok) return NextResponse.json({ error: "Current password is incorrect" }, { status: 401 });
@@ -45,7 +48,8 @@ export async function PATCH(req: NextRequest) {
     return res;
   } catch (e) {
     console.error(e);
-    return NextResponse.json({ error: "Failed to update password" }, { status: 500 });
+    const msg = e instanceof Error && e.message.includes("Can't reach database") ? "Database not configured." : "Failed to update password";
+    return NextResponse.json({ error: msg }, { status: 500 });
   }
 }
 
