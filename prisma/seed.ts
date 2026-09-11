@@ -5,15 +5,18 @@ const prisma = new PrismaClient();
 
 async function main() {
   // ── Admin user (JWT auth) ──────────────────────────────────────────
+  // Only create if not exists — do NOT overwrite passwordHash on re-seed,
+  // so admin can change password via /admin/account without it being reset on next deploy.
   const adminEmail = (process.env.ADMIN_EMAIL || "admin@kruiden.local").trim().toLowerCase();
-  const adminPassword = process.env.ADMIN_PASSWORD || "Verdant2026!";
-  const passwordHash = await bcrypt.hash(adminPassword, 10);
-  await prisma.user.upsert({
-    where: { email: adminEmail },
-    update: { passwordHash },
-    create: { email: adminEmail, passwordHash, name: "Botanist", role: "ADMIN" },
-  });
-  console.log(`Seeded admin user ${adminEmail}`);
+  const adminPassword = process.env.ADMIN_PASSWORD || "kruiden2026";
+  const existingUser = await prisma.user.findUnique({ where: { email: adminEmail } });
+  if (!existingUser) {
+    const passwordHash = await bcrypt.hash(adminPassword, 10);
+    await prisma.user.create({ data: { email: adminEmail, passwordHash, name: "Botanist", role: "ADMIN" } });
+    console.log(`Seeded admin user ${adminEmail}`);
+  } else {
+    console.log(`Admin user ${adminEmail} already exists — skipping password reset (change via /admin/account)`);
+  }
 
   await prisma.product.upsert({
     where: { slug: "restorative-hair-oil" },

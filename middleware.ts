@@ -5,8 +5,8 @@ const ADMIN_COOKIE = "kruiden_admin_token";
 
 // Routes that require admin auth — everything under /admin except /admin (login) itself
 // and API routes that are admin-only (upload, products PATCH, orders)
-const PROTECTED_PREFIXES = ["/admin/dashboard", "/admin/orders", "/admin/product", "/admin/footer", "/admin/settings", "/admin/hero", "/admin/features", "/admin/ritual"];
-const API_PROTECTED = ["/api/upload", "/api/products", "/api/orders", "/api/footer", "/api/cart-settings", "/api/site-settings", "/api/hero", "/api/ritual", "/api/features"];
+const PROTECTED_PREFIXES = ["/admin/dashboard", "/admin/orders", "/admin/product", "/admin/footer", "/admin/settings", "/admin/hero", "/admin/features", "/admin/ritual", "/admin/account"];
+const API_PROTECTED = ["/api/upload", "/api/products", "/api/orders", "/api/footer", "/api/cart-settings", "/api/site-settings", "/api/hero", "/api/ritual", "/api/features", "/api/admin/password"];
 
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
@@ -56,5 +56,5 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/admin/:path*", "/api/upload/:path*", "/api/products/:path*", "/api/orders/:path*", "/api/footer/:path*", "/api/cart-settings/:path*", "/api/site-settings/:path*", "/api/hero/:path*", "/api/ritual/:path*", "/api/features/:path*"],
+  matcher: ["/admin/:path*", "/api/upload/:path*", "/api/products/:path*", "/api/orders/:path*", "/api/footer/:path*", "/api/cart-settings/:path*", "/api/site-settings/:path*", "/api/hero/:path*", "/api/ritual/:path*", "/api/features/:path*", "/api/admin/password/:path*"],
 };

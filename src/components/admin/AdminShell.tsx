@@ -13,6 +13,7 @@ const NAV = [
   { href: "/admin/ritual", label: "Ritual", icon: "self_care" },
   { href: "/admin/footer", label: "Footer", icon: "language" },
   { href: "/admin/settings", label: "Settings", icon: "settings" },
+  { href: "/admin/account", label: "Account", icon: "person" },
 ];
 
 export default function AdminShell({ children }: { children: React.ReactNode }) {
